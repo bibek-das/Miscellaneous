@@ -1,0 +1,36 @@
+# Specify the paths of the folders to compare
+$folder1 = "E:\RainbowSixSiege"
+$folder2 = "D:\Ubisoft Game Launcher\games\RainbowSixSiege"
+
+# Function to recursively copy folders and files if they don't exist in destination
+function Copy-MissingFilesAndFolders {
+    param (
+        [string]$sourcePath,
+        [string]$destinationPath
+    )
+
+    # Get the list of files and folders in the source path
+    $sourceItems = Get-ChildItem -Path $sourcePath
+
+    # Loop through files and folders
+    foreach ($item in $sourceItems) {
+        $destinationItemPath = Join-Path -Path $destinationPath -ChildPath $item.Name
+
+        # If it's a directory, recursively copy
+        if ($item.PSIsContainer) {
+            if (-not (Test-Path -Path $destinationItemPath -PathType Container)) {
+                New-Item -Path $destinationItemPath -ItemType Directory | Out-Null
+                Write-Host "Created folder: $destinationItemPath"
+            }
+            Copy-MissingFilesAndFolders -sourcePath $item.FullName -destinationPath $destinationItemPath
+        }
+        # If it's a file and doesn't exist in the destination, copy it
+        elseif (-not (Test-Path -Path $destinationItemPath -PathType Leaf)) {
+            Copy-Item -Path $item.FullName -Destination $destinationItemPath
+            Write-Host "Copied file: $($item.FullName) to $destinationItemPath"
+        }
+    }
+}
+
+# Call the function to copy missing files and folders
+Copy-MissingFilesAndFolders -sourcePath $folder1 -destinationPath $folder2
